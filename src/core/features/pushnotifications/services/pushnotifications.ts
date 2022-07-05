@@ -251,7 +251,7 @@ export class CorePushNotificationsProvider {
      */
     async enableAnalytics(enable: boolean): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = <any> window; // This feature is only present in our fork of the plugin.
+        const win = <any>window; // This feature is only present in our fork of the plugin.
 
         if (!CoreConstants.CONFIG.enableanalytics || !win.PushNotification?.enableAnalytics) {
             return;
@@ -315,13 +315,13 @@ export class CorePushNotificationsProvider {
         }
 
         return {
-            appid:      CoreConstants.CONFIG.app_id,
-            name:       Device.manufacturer || '',
-            model:      Device.model,
-            platform:   Device.platform + '-fcm',
-            version:    Device.version,
-            pushid:     this.pushID,
-            uuid:       Device.uuid,
+            appid: CoreConstants.CONFIG.app_id,
+            name: Device.manufacturer || '',
+            model: Device.model,
+            platform: Device.platform + '-fcm',
+            version: Device.version,
+            pushid: this.pushID,
+            uuid: Device.uuid,
         };
     }
 
@@ -345,7 +345,7 @@ export class CorePushNotificationsProvider {
      */
     async logEvent(name: string, data: Record<string, unknown>, filter?: boolean): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = <any> window; // This feature is only present in our fork of the plugin.
+        const win = <any>window; // This feature is only present in our fork of the plugin.
 
         if (!CoreConstants.CONFIG.enableanalytics || !win.PushNotification?.logEvent) {
             return;
@@ -491,7 +491,7 @@ export class CorePushNotificationsProvider {
         if (extraFeatures && isAndroid && CoreUtils.isFalseOrZero(data.notif)) {
             // It's a message, use messaging style. Ionic Native doesn't specify this option.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).text = [
+            (<any>localNotif).text = [
                 {
                     message: notification.message,
                     person: data.sender ?? (data.conversationtype == '2' ? data.userfromfullname : ''),
@@ -505,7 +505,7 @@ export class CorePushNotificationsProvider {
             localNotif.icon = notification.image;
             // This feature isn't supported by the official plugin, we use a fork.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).iconType = data['image-type'];
+            (<any>localNotif).iconType = data['image-type'];
 
             localNotif.summary = data.summaryText;
 
@@ -551,7 +551,7 @@ export class CorePushNotificationsProvider {
 
         const data: CoreUserRemoveUserDeviceWSParams = {
             appid: CoreConstants.CONFIG.app_id,
-            uuid:  Device.uuid,
+            uuid: Device.uuid,
         };
         let response: CoreUserRemoveUserDeviceWSResponse;
 
@@ -827,7 +827,7 @@ export class CorePushNotificationsProvider {
     protected async shouldRegister(
         data: CoreUserAddUserDeviceWSParams,
         site: CoreSite,
-    ): Promise<{register: boolean; unregister: boolean}> {
+    ): Promise<{ register: boolean; unregister: boolean }> {
 
         // Check if the device is already registered.
         const records = await CoreUtils.ignoreErrors(
@@ -929,7 +929,7 @@ export type CoreUserRemoveUserDeviceWSResponse = {
  * Params of core_user_add_user_device WS.
  */
 export type CoreUserAddUserDeviceWSParams = {
-    appid: string; // The app id, usually something like com.moodle.moodlemobile.
+    appid: string; // The app id, usually something like com.moodle.mactay.
     name: string; // The device name, 'occam' or 'iPhone' etc.
     model: string; // The device model 'Nexus4' or 'iPad1,1' etc.
     platform: string; // The device platform 'iOS' or 'Android' etc.

@@ -1,10 +1,10 @@
 {
-  "name": "moodlemobile",
+  "name": "Mactay",
   "version": "4.1.0-dev",
-  "description": "The official app for Moodle.",
+  "description": "The official  app for Mactay Moodle.",
   "author": {
-    "name": "Moodle Pty Ltd.",
-    "email": "mobile@moodle.com"
+    "name": "Mactay",
+    "email": "info@mactay.com"
   },
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
     "build": "ionic build",
     "build:prod": "NODE_ENV=production ionic build --prod",
     "build:test": "NODE_ENV=testing ionic build --configuration=testing",
-    "dev:android": "ionic cordova run android --livereload",
+    "dev:android": "ionic cordova run android --livereload --scan",
     "dev:ios": "ionic cordova run ios",
     "prod:android": "NODE_ENV=production ionic cordova run android --prod",
     "prod:ios": "NODE_ENV=production ionic cordova run ios --prod",
