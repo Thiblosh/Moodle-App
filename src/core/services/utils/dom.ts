@@ -54,6 +54,7 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { CoreComponentsRegistry } from '@singletons/components-registry';
 import { CoreDom } from '@singletons/dom';
+import { CoreNetwork } from '@services/network';
 
 /*
  * "Utils" service with helper functions for UI, DOM elements and HTML code.
@@ -170,7 +171,7 @@ export class CoreDomUtilsProvider {
         limitedThreshold = limitedThreshold === undefined ? CoreConstants.DOWNLOAD_THRESHOLD : limitedThreshold;
 
         let wifiPrefix = '';
-        if (CoreApp.isNetworkAccessLimited()) {
+        if (CoreNetwork.isNetworkAccessLimited()) {
             wifiPrefix = Translate.instant('core.course.confirmlimiteddownload');
         }
 
@@ -194,7 +195,7 @@ export class CoreDomUtilsProvider {
                 ),
             );
         } else if (alwaysConfirm || size.size >= wifiThreshold ||
-                (CoreApp.isNetworkAccessLimited() && size.size >= limitedThreshold)) {
+                (CoreNetwork.isNetworkAccessLimited() && size.size >= limitedThreshold)) {
             message = message || (size.size === 0 ? 'core.course.confirmdownloadzerosize' : 'core.course.confirmdownload');
 
             return this.showConfirm(
@@ -678,30 +679,29 @@ export class CoreDomUtilsProvider {
      * Wait an element to exists using the findFunction.
      *
      * @param findFunction The function used to find the element.
+     * @param retries Number of retries before giving up.
+     * @param retryAfter Milliseconds to wait before retrying if the element wasn't found.
      * @return Resolved if found, rejected if too many tries.
      * @deprecated since app 4.0 Use CoreDom.waitToBeInsideElement instead.
      */
-    waitElementToExist(findFunction: () => HTMLElement | null): Promise<HTMLElement> {
-        const promiseInterval = CoreUtils.promiseDefer<HTMLElement>();
-        let tries = 100;
+    async waitElementToExist(
+        findFunction: () => HTMLElement | null,
+        retries: number = 100,
+        retryAfter: number = 100,
+    ): Promise<HTMLElement> {
+        const element = findFunction();
 
-        const clear = setInterval(() => {
-            const element: HTMLElement | null = findFunction();
+        if (!element && retries === 0) {
+            throw Error('Element not found');
+        }
 
-            if (element) {
-                clearInterval(clear);
-                promiseInterval.resolve(element);
-            } else {
-                tries--;
+        if (!element) {
+            await CoreUtils.wait(retryAfter);
 
-                if (tries <= 0) {
-                    clearInterval(clear);
-                    promiseInterval.reject();
-                }
-            }
-        }, 100);
+            return this.waitElementToExist(findFunction, retries - 1);
+        }
 
-        return promiseInterval.promise;
+        return element;
     }
 
     /**
@@ -1490,7 +1490,8 @@ export class CoreDomUtilsProvider {
      * @param header Modal header.
      * @param placeholderOrLabel Placeholder (for textual/numeric inputs) or label (for radio/checkbox). By default, "Password".
      * @param type Type of the input element. By default, password.
-     * @param buttons Buttons. If not provided, OK and Cancel buttons will be displayed.
+     * @param buttons Buttons. If not provided or it's an object with texts, OK and Cancel buttons will be displayed.
+     * @para options Other alert options.
      * @return Promise resolved with the input data (true for checkbox/radio) if the user clicks OK, rejected if cancels.
      */
     showPrompt(
@@ -1498,7 +1499,8 @@ export class CoreDomUtilsProvider {
         header?: string,
         placeholderOrLabel?: string,
         type: TextFieldTypes | 'checkbox' | 'radio' | 'textarea' = 'password',
-        buttons?: PromptButton[],
+        buttons?: PromptButton[] | { okText?: string; cancelText?: string },
+        options: AlertOptions = {},
     ): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
         return new Promise((resolve, reject) => {
             placeholderOrLabel = placeholderOrLabel ?? Translate.instant('core.login.password');
@@ -1517,21 +1519,19 @@ export class CoreDomUtilsProvider {
                 }
             };
 
-            const options: AlertOptions = {
-                header,
-                message,
-                inputs: [
-                    {
-                        name: 'promptinput',
-                        placeholder: placeholderOrLabel,
-                        label: placeholderOrLabel,
-                        type,
-                        value: (isCheckbox || isRadio) ? true : undefined,
-                    },
-                ],
-            };
+            options.header = header;
+            options.message = message;
+            options.inputs = [
+                {
+                    name: 'promptinput',
+                    placeholder: placeholderOrLabel,
+                    label: placeholderOrLabel,
+                    type,
+                    value: (isCheckbox || isRadio) ? true : undefined,
+                },
+            ];
 
-            if (buttons?.length) {
+            if (Array.isArray(buttons) && buttons.length) {
                 options.buttons = buttons.map((button) => ({
                     ...button,
                     handler: (data) => {
@@ -1549,14 +1549,14 @@ export class CoreDomUtilsProvider {
                 // Default buttons.
                 options.buttons = [
                     {
-                        text: Translate.instant('core.cancel'),
+                        text: buttons && 'cancelText' in buttons ? buttons.cancelText : Translate.instant('core.cancel'),
                         role: 'cancel',
                         handler: () => {
                             reject();
                         },
                     },
                     {
-                        text: Translate.instant('core.ok'),
+                        text: buttons && 'okText' in buttons ? buttons.okText : Translate.instant('core.ok'),
                         handler: resolvePromise,
                     },
                 ];
@@ -1792,12 +1792,12 @@ export class CoreDomUtilsProvider {
 
         const { waitForDismissCompleted, ...popoverOptions } = options;
         const popover = await PopoverController.create(popoverOptions);
-        const zoomLevel = await CoreConfig.get(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.NORMAL);
+        const zoomLevel = await CoreConfig.get(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreConstants.CONFIG.defaultZoomLevel);
 
         await popover.present();
 
         // Fix popover position if zoom is applied.
-        if (zoomLevel !== CoreZoomLevel.NORMAL) {
+        if (zoomLevel !== CoreZoomLevel.NONE) {
             switch (getMode()) {
                 case 'ios':
                     fixIOSPopoverPosition(popover, options.event);

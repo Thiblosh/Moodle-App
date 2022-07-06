@@ -16,9 +16,9 @@ import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreCourseActivityPrefetchHandlerBase } from '@features/course/classes/activity-prefetch-handler';
 import { CoreCourse, CoreCourseAnyModuleData, CoreCourseCommonModWSOptions } from '@features/course/services/course';
-import { CoreApp } from '@services/app';
 import { CoreFile } from '@services/file';
 import { CoreFilepool } from '@services/filepool';
+import { CorePlatform } from '@services/platform';
 import { CoreFileSizeSum } from '@services/plugin-file-delegate';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
@@ -89,7 +89,7 @@ export class AddonModScormPrefetchHandlerService extends CoreCourseActivityPrefe
         ]);
 
         // Success, return the hash.
-        return scorm.sha1hash!;
+        return scorm.sha1hash ?? '';
     }
 
     /**
@@ -112,7 +112,7 @@ export class AddonModScormPrefetchHandlerService extends CoreCourseActivityPrefe
         const packageUrl = AddonModScorm.getPackageUrl(scorm);
 
         // Get the folder where the unzipped files will be.
-        const dirPath = await AddonModScorm.getScormFolder(scorm.moduleurl!);
+        const dirPath = await AddonModScorm.getScormFolder(scorm.moduleurl ?? '');
 
         // Notify that the download is starting.
         onProgress && onProgress({ message: 'core.downloading' });
@@ -282,7 +282,7 @@ export class AddonModScormPrefetchHandlerService extends CoreCourseActivityPrefe
         const scorm = await this.getScorm(module, courseId);
 
         // Get the folder where SCORM should be unzipped.
-        const path = await AddonModScorm.getScormFolder(scorm.moduleurl!);
+        const path = await AddonModScorm.getScormFolder(scorm.moduleurl ?? '');
 
         return CoreFile.getDirectorySize(path);
     }
@@ -388,13 +388,13 @@ export class AddonModScormPrefetchHandlerService extends CoreCourseActivityPrefe
         const scorm = await this.getScorm(module, courseId, siteId);
 
         // Get the folder where SCORM should be unzipped.
-        const path = await AddonModScorm.getScormFolder(scorm.moduleurl!);
+        const path = await AddonModScorm.getScormFolder(scorm.moduleurl ?? '');
 
         const promises: Promise<unknown>[] = [];
 
         // Remove the unzipped folder.
         promises.push(CoreFile.removeDir(path).catch((error) => {
-            if (error && (error.code == 1 || !CoreApp.isMobile())) {
+            if (error && (error.code == 1 || !CorePlatform.isMobile())) {
                 // Not found, ignore error.
             } else {
                 throw error;

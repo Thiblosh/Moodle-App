@@ -20,12 +20,13 @@ import { FileEntry, IFile } from '@ionic-native/file/ngx';
 import { MediaFile } from '@ionic-native/media-capture/ngx';
 
 import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreFile, CoreFileProvider, CoreFileProgressEvent } from '@services/file';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreTextUtils } from '@services/utils/text';
-import { CoreUtils, PromiseDefer } from '@services/utils/utils';
-import { makeSingleton, Translate, Camera, Chooser, Platform, ActionSheetController } from '@singletons';
+import { CoreUtils } from '@services/utils/utils';
+import { makeSingleton, Translate, Camera, Chooser, ActionSheetController } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
 import { CoreError } from '@classes/errors/error';
@@ -36,6 +37,8 @@ import { CoreIonLoadingElement } from '@classes/ion-loading';
 import { CoreWSUploadFileResult } from '@services/ws';
 import { CoreSites } from '@services/sites';
 import { CoreText } from '@singletons/text';
+import { CorePromisedValue } from '@classes/promised-value';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Helper service to upload files.
@@ -44,7 +47,7 @@ import { CoreText } from '@singletons/text';
 export class CoreFileUploaderHelperProvider {
 
     protected logger: CoreLogger;
-    protected filePickerDeferred?: PromiseDefer<CoreWSUploadFileResult | FileEntry>;
+    protected filePickerDeferred?: CorePromisedValue<CoreWSUploadFileResult | FileEntry>;
     protected actionSheet?: HTMLIonActionSheetElement;
 
     constructor() {
@@ -120,7 +123,7 @@ export class CoreFileUploaderHelperProvider {
             return;
         }
 
-        if (!allowOffline && !CoreApp.isOnline()) {
+        if (!allowOffline && !CoreNetwork.isOnline()) {
             throw new CoreError(Translate.instant('core.fileuploader.errormustbeonlinetoupload'));
         }
 
@@ -130,7 +133,7 @@ export class CoreFileUploaderHelperProvider {
 
         if (size < 0) {
             return CoreDomUtils.showConfirm(Translate.instant('core.fileuploader.confirmuploadunknownsize'));
-        } else if (size >= wifiThreshold || (CoreApp.isNetworkAccessLimited() && size >= limitedThreshold)) {
+        } else if (size >= wifiThreshold || (CoreNetwork.isNetworkAccessLimited() && size >= limitedThreshold)) {
             const readableSize = CoreTextUtils.bytesToSize(size, 2);
 
             return CoreDomUtils.showConfirm(
@@ -349,7 +352,7 @@ export class CoreFileUploaderHelperProvider {
         }];
         const handlers = CoreFileUploaderDelegate.getHandlers(mimetypes);
 
-        this.filePickerDeferred = CoreUtils.promiseDefer();
+        this.filePickerDeferred = new CorePromisedValue();
 
         // Create a button for each handler.
         handlers.forEach((handler) => {
@@ -363,7 +366,7 @@ export class CoreFileUploaderHelperProvider {
                         return false;
                     }
 
-                    if (!allowOffline && !CoreApp.isOnline()) {
+                    if (!allowOffline && !CoreNetwork.isOnline()) {
                         // Not allowed, show error.
                         CoreDomUtils.showErrorModal('core.fileuploader.errormustbeonlinetoupload', true);
 
@@ -431,7 +434,7 @@ export class CoreFileUploaderHelperProvider {
             });
         }, 500);
 
-        return this.filePickerDeferred.promise;
+        return this.filePickerDeferred;
     }
 
     /**
@@ -550,7 +553,7 @@ export class CoreFileUploaderHelperProvider {
             media = medias[0]; // We used limit 1, we only want 1 media.
         } catch (error) {
 
-            if (isAudio && this.isNoAppError(error) && CoreApp.isMobile()) {
+            if (isAudio && this.isNoAppError(error) && CorePlatform.isMobile()) {
                 // No app to record audio, fallback to capture it ourselves.
                 try {
                     media = await CoreFileUploader.captureAudioInApp();
@@ -573,7 +576,7 @@ export class CoreFileUploaderHelperProvider {
         }
 
         // Make sure the path has the protocol. In iOS it doesn't.
-        if (CoreApp.isMobile() && path.indexOf('file://') == -1) {
+        if (CorePlatform.isMobile() && path.indexOf('file://') == -1) {
             path = 'file://' + path;
         }
 
@@ -641,8 +644,8 @@ export class CoreFileUploaderHelperProvider {
             options.popoverOptions = {
                 x: 10,
                 y: 10,
-                width: Platform.width() - 200,
-                height: Platform.height() - 200,
+                width: CorePlatform.width() - 200,
+                height: CorePlatform.height() - 200,
                 arrowDir: Camera.PopoverArrowDirection.ARROW_ANY,
             };
 
@@ -794,7 +797,7 @@ export class CoreFileUploaderHelperProvider {
             return this.uploadFile(path, maxSize, checkSize, options, siteId);
         };
 
-        if (!CoreApp.isOnline()) {
+        if (!CoreNetwork.isOnline()) {
             return errorUploading(Translate.instant('core.fileuploader.errormustbeonlinetoupload'));
         }
 

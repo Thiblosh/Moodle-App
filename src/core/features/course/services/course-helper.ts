@@ -58,7 +58,7 @@ import {
 } from './module-prefetch-delegate';
 import { CoreFileSizeSum } from '@services/plugin-file-delegate';
 import { CoreFileHelper } from '@services/file-helper';
-import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreSite } from '@classes/site';
 import { CoreFile } from '@services/file';
 import { CoreUrlUtils } from '@services/utils/url';
@@ -721,7 +721,7 @@ export class CoreCourseHelperProvider {
         const mainFile = files[0];
 
         if (!CoreFileHelper.isOpenableInApp(mainFile)) {
-            await CoreFileHelper.showConfirmOpenUnsupportedFile();
+            await CoreFileHelper.showConfirmOpenUnsupportedFile(false, mainFile);
         }
 
         const site = await CoreSites.getSite(siteId);
@@ -798,7 +798,7 @@ export class CoreCourseHelperProvider {
         files?: CoreCourseModuleContentFile[],
         options: CoreUtilsOpenFileOptions = {},
     ): Promise<void> {
-        if (!CoreApp.isOnline()) {
+        if (!CoreNetwork.isOnline()) {
             // Not online, get the offline file. It will fail if not found.
             let path: string | undefined;
             try {
@@ -950,7 +950,7 @@ export class CoreCourseHelperProvider {
     ): Promise<string> {
         siteId = siteId || CoreSites.getCurrentSiteId();
 
-        const isOnline = CoreApp.isOnline();
+        const isOnline = CoreNetwork.isOnline();
         const mainFile = files[0];
         const timemodified = mainFile.timemodified || 0;
 
@@ -969,7 +969,7 @@ export class CoreCourseHelperProvider {
         }
 
         // Start the download if in wifi, but return the URL right away so the file is opened.
-        if (CoreApp.isWifi()) {
+        if (CoreNetwork.isWifi()) {
             this.downloadModule(module, courseId, component, componentId, files, siteId);
         }
 

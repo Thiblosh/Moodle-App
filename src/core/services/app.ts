@@ -16,10 +16,9 @@ import { Injectable } from '@angular/core';
 
 import { CoreDB } from '@services/db';
 import { CoreEvents } from '@singletons/events';
-import { CoreUtils, PromiseDefer } from '@services/utils/utils';
 import { SQLiteDB, SQLiteDBTableSchema } from '@classes/sqlitedb';
 
-import { makeSingleton, Keyboard, Network, StatusBar, Platform, Device } from '@singletons';
+import { makeSingleton, Keyboard, StatusBar, Device } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreColors } from '@singletons/colors';
 import { DBNAME, SCHEMA_VERSIONS_TABLE_NAME, SCHEMA_VERSIONS_TABLE_SCHEMA, SchemaVersionsDBEntry } from '@services/database/app';
@@ -28,6 +27,10 @@ import { CoreRedirectPayload } from './navigator';
 import { CoreDatabaseCachingStrategy, CoreDatabaseTableProxy } from '@classes/database/database-table-proxy';
 import { asyncInstance } from '../utils/async-instance';
 import { CoreDatabaseTable } from '@classes/database/database-table';
+import { CorePromisedValue } from '@classes/promised-value';
+import { Subscription } from 'rxjs';
+import { CorePlatform } from '@services/platform';
+import { CoreNetwork } from '@services/network';
 
 /**
  * Factory to provide some global functionalities, like access to the global app database.
@@ -47,11 +50,10 @@ export class CoreAppProvider {
 
     protected db?: SQLiteDB;
     protected logger: CoreLogger;
-    protected ssoAuthenticationDeferred?: PromiseDefer<void>;
+    protected ssoAuthenticationDeferred?: CorePromisedValue<void>;
     protected isKeyboardShown = false;
     protected keyboardOpening = false;
     protected keyboardClosing = false;
-    protected forceOffline = false;
     protected redirect?: CoreRedirectData;
     protected schemaVersionsTable = asyncInstance<CoreDatabaseTable<SchemaVersionsDBEntry, 'name'>>();
 
@@ -110,7 +112,7 @@ export class CoreAppProvider {
      * Closes the keyboard.
      */
     closeKeyboard(): void {
-        if (this.isMobile()) {
+        if (CorePlatform.isMobile()) {
             Keyboard.hide();
         }
     }
@@ -191,7 +193,7 @@ export class CoreAppProvider {
             return 'market://details?id=' + storesConfig.android;
         }
 
-        if (this.isMobile() && storesConfig.mobile) {
+        if (CorePlatform.isMobile() && storesConfig.mobile) {
             return storesConfig.mobile;
         }
 
@@ -202,7 +204,7 @@ export class CoreAppProvider {
      * Get platform major version number.
      */
     getPlatformMajorVersion(): number {
-        if (!this.isMobile()) {
+        if (!CorePlatform.isMobile()) {
             return 0;
         }
 
@@ -225,7 +227,7 @@ export class CoreAppProvider {
      * @return Whether the app is running in an Android mobile or tablet device.
      */
     isAndroid(): boolean {
-        return this.isMobile() && Platform.is('android');
+        return CorePlatform.isMobile() && CorePlatform.is('android');
     }
 
     /**
@@ -244,7 +246,7 @@ export class CoreAppProvider {
      * @return Whether the app is running in an iOS mobile or tablet device.
      */
     isIOS(): boolean {
-        return this.isMobile() && !Platform.is('android');
+        return CorePlatform.isMobile() && !CorePlatform.is('android');
     }
 
     /**
@@ -308,9 +310,10 @@ export class CoreAppProvider {
      * Checks if the app is running in a mobile or tablet device (Cordova).
      *
      * @return Whether the app is running in a mobile or tablet device.
+     * @deprecated since 4.1. use CorePlatform instead.
      */
     isMobile(): boolean {
-        return Platform.is('cordova');
+        return CorePlatform.isMobile();
     }
 
     /**
@@ -319,61 +322,37 @@ export class CoreAppProvider {
      * @return Whether the app the current window is wider than a mobile.
      */
     isWide(): boolean {
-        return Platform.width() > 768;
+        return CorePlatform.width() > 768;
     }
 
     /**
      * Returns whether we are online.
      *
      * @return Whether the app is online.
+     * @deprecated since 4.1.0. Use CoreNetwork instead.
      */
     isOnline(): boolean {
-        if (this.forceOffline) {
-            return false;
-        }
-
-        if (!this.isMobile()) {
-            return navigator.onLine;
-        }
-
-        let online = Network.type !== null && Network.type != Network.Connection.NONE &&
-            Network.type != Network.Connection.UNKNOWN;
-
-        // Double check we are not online because we cannot rely 100% in Cordova APIs.
-        if (!online && navigator.onLine) {
-            online = true;
-        }
-
-        return online;
+        return CoreNetwork.isOnline();
     }
 
     /**
      * Check if device uses a limited connection.
      *
      * @return Whether the device uses a limited connection.
+     * @deprecated since 4.1.0. Use CoreNetwork instead.
      */
     isNetworkAccessLimited(): boolean {
-        if (!this.isMobile()) {
-            return false;
-        }
-
-        const limited = [
-            Network.Connection.CELL_2G,
-            Network.Connection.CELL_3G,
-            Network.Connection.CELL_4G,
-            Network.Connection.CELL,
-        ];
-
-        return limited.indexOf(Network.type) > -1;
+        return CoreNetwork.isNetworkAccessLimited();
     }
 
     /**
      * Check if device uses a wifi connection.
      *
      * @return Whether the device uses a wifi connection.
+     * @deprecated since 4.1.0. Use CoreNetwork instead.
      */
     isWifi(): boolean {
-        return this.isOnline() && !this.isNetworkAccessLimited();
+        return CoreNetwork.isWifi();
     }
 
     /**
@@ -451,14 +430,14 @@ export class CoreAppProvider {
      * NOT when the browser is opened.
      */
     startSSOAuthentication(): void {
-        this.ssoAuthenticationDeferred = CoreUtils.promiseDefer<void>();
+        this.ssoAuthenticationDeferred = new CorePromisedValue();
 
         // Resolve it automatically after 10 seconds (it should never take that long).
         const cancelTimeout = setTimeout(() => this.finishSSOAuthentication(), 10000);
 
         // If the promise is resolved because finishSSOAuthentication is called, stop the cancel promise.
         // eslint-disable-next-line promise/catch-or-return
-        this.ssoAuthenticationDeferred.promise.then(() => clearTimeout(cancelTimeout));
+        this.ssoAuthenticationDeferred.then(() => clearTimeout(cancelTimeout));
     }
 
     /**
@@ -486,9 +465,7 @@ export class CoreAppProvider {
      * @return Promise resolved once SSO authentication finishes.
      */
     async waitForSSOAuthentication(): Promise<void> {
-        const promise = this.ssoAuthenticationDeferred?.promise;
-
-        await promise;
+        await this.ssoAuthenticationDeferred;
     }
 
     /**
@@ -497,7 +474,9 @@ export class CoreAppProvider {
      * @param timeout Maximum time to wait, use null to wait forever.
      */
     async waitForResume(timeout: number | null = null): Promise<void> {
-        let deferred: PromiseDefer<void> | null = CoreUtils.promiseDefer<void>();
+        let deferred: CorePromisedValue<void> | null = new CorePromisedValue();
+        let resumeSubscription: Subscription | null = null;
+        let timeoutId: number | null = null;
 
         const stopWaiting = () => {
             if (!deferred) {
@@ -505,16 +484,16 @@ export class CoreAppProvider {
             }
 
             deferred.resolve();
-            resumeSubscription.unsubscribe();
+            resumeSubscription?.unsubscribe();
             timeoutId && clearTimeout(timeoutId);
 
             deferred = null;
         };
 
-        const resumeSubscription = Platform.resume.subscribe(stopWaiting);
-        const timeoutId = timeout ? setTimeout(stopWaiting, timeout) : false;
+        resumeSubscription = CorePlatform.resume.subscribe(stopWaiting);
+        timeoutId = timeout ? window.setTimeout(stopWaiting, timeout) : null;
 
-        await deferred.promise;
+        await deferred;
     }
 
     /**
@@ -629,7 +608,7 @@ export class CoreAppProvider {
      * @param color RGB color to use as status bar background. If not set the css variable will be read.
      */
     setStatusBarColor(color?: string): void {
-        if (!this.isMobile()) {
+        if (!CorePlatform.isMobile()) {
             return;
         }
 
@@ -665,9 +644,10 @@ export class CoreAppProvider {
      * Set value of forceOffline flag. If true, the app will think the device is offline.
      *
      * @param value Value to set.
+     * @deprecated since 4.1.0. Use CoreNetwork instead.
      */
     setForceOffline(value: boolean): void {
-        this.forceOffline = !!value;
+        CoreNetwork.setForceOffline(value);
     }
 
     /**

@@ -15,7 +15,7 @@
 import { Injectable } from '@angular/core';
 import { Params } from '@angular/router';
 
-import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreEvents } from '@singletons/events';
 import { CoreLogger } from '@singletons/logger';
 import { CoreSitesCommonWSOptions, CoreSites, CoreSitesReadingStrategy } from '@services/sites';
@@ -23,7 +23,7 @@ import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreSiteWSPreSets, CoreSite } from '@classes/site';
 import { CoreConstants } from '@/core/constants';
-import { makeSingleton, Platform, Translate } from '@singletons';
+import { makeSingleton, Translate } from '@singletons';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 
 import {
@@ -52,6 +52,7 @@ import { asyncInstance, AsyncInstance } from '@/core/utils/async-instance';
 import { CoreDatabaseTable } from '@classes/database/database-table';
 import { CoreDatabaseCachingStrategy } from '@classes/database/database-table-proxy';
 import { SQLiteDB } from '@classes/sqlitedb';
+import { CorePlatform } from '@services/platform';
 
 const ROOT_CACHE_KEY = 'mmCourse:';
 
@@ -173,7 +174,7 @@ export class CoreCourseProvider {
      * Initialize.
      */
     initialize(): void {
-        Platform.resume.subscribe(() => {
+        CorePlatform.resume.subscribe(() => {
             // Run the handler the app is open to keep user in online status.
             setTimeout(() => {
                 CoreCronDelegate.forceCronHandlerExecution(CoreCourseLogCronHandler.name);
@@ -554,7 +555,7 @@ export class CoreCourseProvider {
                 return sections;
             } catch {
                 // The module might still be cached by a request with different parameters.
-                if (!ignoreCache && !CoreApp.isOnline()) {
+                if (!ignoreCache && !CoreNetwork.isOnline()) {
                     if (includeStealth) {
                         // Older versions didn't include the includestealthmodules option.
                         return doRequest(site, courseId, moduleId, modName, false, true);
@@ -1168,7 +1169,7 @@ export class CoreCourseProvider {
             CoreCourseOffline.markCompletedManually(cmId, completed, courseId, undefined, siteId);
 
         // The offline function requires a courseId and it could be missing because it's a calculated field.
-        if (!CoreApp.isOnline()) {
+        if (!CoreNetwork.isOnline()) {
             // App is offline, store the action.
             return storeOffline();
         }
@@ -1304,16 +1305,15 @@ export class CoreCourseProvider {
             }
 
             // Wait for plugins to be loaded.
-            const deferred = CoreUtils.promiseDefer<void>();
+            await new Promise((resolve, reject) => {
+                const observer = CoreEvents.on(CoreEvents.SITE_PLUGINS_LOADED, () => {
+                    observer?.off();
 
-            const observer = CoreEvents.on(CoreEvents.SITE_PLUGINS_LOADED, () => {
-                observer?.off();
-
-                CoreCourseFormatDelegate.openCourse(<CoreCourseAnyCourseData> course, navOptions)
-                    .then(deferred.resolve).catch(deferred.reject);
+                    CoreCourseFormatDelegate.openCourse(<CoreCourseAnyCourseData> course, navOptions).then(resolve).catch(reject);
+                });
             });
 
-            return deferred.promise;
+            return;
         } catch (error) {
             // The site plugin failed to load. The user needs to restart the app to try loading it again.
             const message = Translate.instant('core.courses.errorloadplugins');

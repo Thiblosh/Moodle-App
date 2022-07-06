@@ -34,6 +34,8 @@ import { CoreFileEntry } from '@services/file-helper';
 import { CoreConstants } from '@/core/constants';
 import { CoreWindow } from '@singletons/window';
 import { CoreColors } from '@singletons/colors';
+import { CorePromisedValue } from '@classes/promised-value';
+import { CorePlatform } from '@services/platform';
 
 type TreeNode<T> = T & { children: TreeNode<T>[] };
 
@@ -48,7 +50,7 @@ export class CoreUtilsProvider {
     protected logger: CoreLogger;
     protected iabInstance?: InAppBrowserObject;
     protected uniqueIds: {[name: string]: number} = {};
-    protected qrScanData?: {deferred: PromiseDefer<string>; observable: Subscription};
+    protected qrScanData?: {deferred: CorePromisedValue<string>; observable: Subscription};
     protected initialColorSchemeContent = 'light dark';
 
     constructor() {
@@ -1014,7 +1016,7 @@ export class CoreUtilsProvider {
 
         this.iabInstance = InAppBrowser.create(url, '_blank', options);
 
-        if (CoreApp.isMobile()) {
+        if (CorePlatform.isMobile()) {
             let loadStopSubscription;
             const loadStartUrls: string[] = [];
 
@@ -1325,18 +1327,13 @@ export class CoreUtilsProvider {
     }
 
     /**
-     * Similar to AngularJS $q.defer().
+     * Create a deferred promise that can be resolved or rejected explicitly.
      *
      * @return The deferred promise.
+     * @deprecated since app 4.1. Use CorePromisedValue instead.
      */
-    promiseDefer<T>(): PromiseDefer<T> {
-        const deferred: Partial<PromiseDefer<T>> = {};
-        deferred.promise = new Promise((resolve, reject): void => {
-            deferred.resolve = resolve as (value?: T | undefined) => void;
-            deferred.reject = reject;
-        });
-
-        return deferred as PromiseDefer<T>;
+    promiseDefer<T>(): CorePromisedValue<T> {
+        return new CorePromisedValue<T>();
     }
 
     /**
@@ -1594,7 +1591,7 @@ export class CoreUtilsProvider {
      * @return Whether the app can scan QR codes.
      */
     canScanQR(): boolean {
-        return CoreApp.isMobile();
+        return CorePlatform.isMobile();
     }
 
     /**
@@ -1619,7 +1616,7 @@ export class CoreUtilsProvider {
      * @return Promise resolved with the QR string, rejected if error or cancelled.
      */
     async startScanQR(): Promise<string | undefined> {
-        if (!CoreApp.isMobile()) {
+        if (!CorePlatform.isMobile()) {
             return Promise.reject('QRScanner isn\'t available in browser.');
         }
 
@@ -1635,12 +1632,12 @@ export class CoreUtilsProvider {
 
             if (this.qrScanData && this.qrScanData.deferred) {
                 // Already scanning.
-                return this.qrScanData.deferred.promise;
+                return this.qrScanData.deferred;
             }
 
             // Start scanning.
             this.qrScanData = {
-                deferred: this.promiseDefer(),
+                deferred: new CorePromisedValue(),
 
                 // When text is received, stop scanning and return the text.
                 observable: QRScanner.scan().subscribe(text => this.stopScanQR(text, false)),
@@ -1659,7 +1656,7 @@ export class CoreUtilsProvider {
                     colorSchemeMeta.setAttribute('content', 'normal');
                 }
 
-                return this.qrScanData.deferred.promise;
+                return this.qrScanData.deferred;
             } catch (e) {
                 this.stopScanQR(e, true);
 
@@ -1697,7 +1694,7 @@ export class CoreUtilsProvider {
         this.qrScanData.observable.unsubscribe(); // Stop scanning.
 
         if (error) {
-            this.qrScanData.deferred.reject(data);
+            this.qrScanData.deferred.reject(typeof data === 'string' ? new Error(data) : data);
         } else if (data !== undefined) {
             this.qrScanData.deferred.resolve(data as string);
         } else {
@@ -1768,30 +1765,6 @@ export class CoreUtilsProvider {
 }
 
 export const CoreUtils = makeSingleton(CoreUtilsProvider);
-
-/**
- * Deferred promise. It's similar to the result of $q.defer() in AngularJS.
- */
-export type PromiseDefer<T> = {
-    /**
-     * The promise.
-     */
-    promise: Promise<T>;
-
-    /**
-     * Function to resolve the promise.
-     *
-     * @param value The resolve value.
-     */
-    resolve: (value?: T) => void; // Function to resolve the promise.
-
-    /**
-     * Function to reject the promise.
-     *
-     * @param reason The reject param.
-     */
-    reject: (reason?: unknown) => void;
-};
 
 /**
  * Data for each entry of executeOrderedPromises.

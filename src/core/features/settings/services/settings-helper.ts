@@ -14,6 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreCronDelegate } from '@services/cron';
 import { CoreEvents } from '@singletons/events';
 import { CoreFilepool } from '@services/filepool';
@@ -50,8 +51,8 @@ export const enum CoreColorScheme {
  * Constants to define zoom levels.
  */
 export const enum CoreZoomLevel {
-    NORMAL = 'normal',
-    LOW = 'low',
+    NONE = 'none',
+    MEDIUM = 'medium',
     HIGH = 'high',
 }
 
@@ -262,10 +263,10 @@ export class CoreSettingsHelperProvider {
         if (site.isLoggedOut()) {
             // Cannot sync logged out sites.
             throw new CoreError(Translate.instant('core.settings.cannotsyncloggedout'));
-        } else if (hasSyncHandlers && !CoreApp.isOnline()) {
+        } else if (hasSyncHandlers && !CoreNetwork.isOnline()) {
             // We need connection to execute sync.
             throw new CoreError(Translate.instant('core.settings.cannotsyncoffline'));
-        } else if (hasSyncHandlers && syncOnlyOnWifi && CoreApp.isNetworkAccessLimited()) {
+        } else if (hasSyncHandlers && syncOnlyOnWifi && CoreNetwork.isNetworkAccessLimited()) {
             throw new CoreError(Translate.instant('core.settings.cannotsyncwithoutwifi'));
         }
 
@@ -303,13 +304,13 @@ export class CoreSettingsHelperProvider {
             }
 
             // Reset the value to solve edge cases.
-            CoreConfig.set(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.NORMAL);
+            CoreConfig.set(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.NONE);
 
             if (fontSize < 100) {
                 if (fontSize > 90) {
                     CoreConfig.set(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.HIGH);
                 } else if (fontSize > 70) {
-                    CoreConfig.set(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.LOW);
+                    CoreConfig.set(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.MEDIUM);
                 }
             }
 
@@ -326,7 +327,7 @@ export class CoreSettingsHelperProvider {
      * @return The saved zoom Level option.
      */
     async getZoomLevel(): Promise<CoreZoomLevel> {
-        return CoreConfig.get(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreZoomLevel.NORMAL);
+        return CoreConfig.get(CoreConstants.SETTINGS_ZOOM_LEVEL, CoreConstants.CONFIG.defaultZoomLevel);
     }
 
     /**

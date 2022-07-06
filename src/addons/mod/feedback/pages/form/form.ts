@@ -19,12 +19,12 @@ import { CoreCourse, CoreCourseCommonModWSOptions } from '@features/course/servi
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CanLeave } from '@guards/can-leave';
 import { IonContent } from '@ionic/angular';
-import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites, CoreSitesReadingStrategy } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
-import { Network, NgZone, Translate } from '@singletons';
+import { NgZone, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import {
@@ -80,10 +80,10 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         this.currentSite = CoreSites.getRequiredCurrentSite();
 
         // Refresh online status when changes.
-        this.onlineObserver = Network.onChange().subscribe(() => {
+        this.onlineObserver = CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
             NgZone.run(() => {
-                this.offline = !CoreApp.isOnline();
+                this.offline = !CoreNetwork.isOnline();
             });
         });
     }
@@ -160,7 +160,7 @@ export class AddonModFeedbackFormPage implements OnInit, OnDestroy, CanLeave {
         try {
             this.module = await CoreCourse.getModule(this.cmId, this.courseId, undefined, true, false, this.currentSite.getId());
 
-            this.offline = !CoreApp.isOnline();
+            this.offline = !CoreNetwork.isOnline();
             const options = {
                 cmId: this.cmId,
                 readingStrategy: this.offline ? CoreSitesReadingStrategy.PREFER_CACHE : CoreSitesReadingStrategy.ONLY_NETWORK,

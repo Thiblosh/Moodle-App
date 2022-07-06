@@ -25,7 +25,7 @@ import { CoreTextUtils } from '@services/utils/text';
 import { CoreConfig } from '@services/config';
 import { CoreConstants } from '@/core/constants';
 import { CoreSite, CoreSiteInfo } from '@classes/site';
-import { makeSingleton, Badge, Push, Device, Translate, Platform, ApplicationInit, NgZone } from '@singletons';
+import { makeSingleton, Badge, Push, Device, Translate, ApplicationInit, NgZone } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreEvents } from '@singletons/events';
 import {
@@ -46,6 +46,7 @@ import { CoreDatabaseTable } from '@classes/database/database-table';
 import { CoreDatabaseCachingStrategy, CoreDatabaseTableProxy } from '@classes/database/database-table-proxy';
 import { CoreObject } from '@singletons/object';
 import { lazyMap, LazyMap } from '@/core/utils/lazy-map';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Service to handle push notifications.
@@ -152,7 +153,7 @@ export class CorePushNotificationsProvider {
      * @return Promise resolved when done.
      */
     protected async initializeDefaultChannel(): Promise<void> {
-        await Platform.ready();
+        await CorePlatform.ready();
 
         // Create the default channel.
         this.createDefaultChannel();
@@ -204,7 +205,7 @@ export class CorePushNotificationsProvider {
      * @return Whether the device can be registered in Moodle.
      */
     canRegisterOnMoodle(): boolean {
-        return !!this.pushID && CoreApp.isMobile();
+        return !!this.pushID && CorePlatform.isMobile();
     }
 
     /**
@@ -250,20 +251,19 @@ export class CorePushNotificationsProvider {
      */
     async enableAnalytics(enable: boolean): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = <any> window; // This feature is only present in our fork of the plugin.
+        const win = <any>window; // This feature is only present in our fork of the plugin.
 
         if (!CoreConstants.CONFIG.enableanalytics || !win.PushNotification?.enableAnalytics) {
             return;
         }
 
-        const deferred = CoreUtils.promiseDefer<void>();
+        await new Promise<void>(resolve => {
+            win.PushNotification.enableAnalytics(resolve, (error) => {
+                this.logger.error('Error enabling or disabling Firebase analytics', enable, error);
 
-        win.PushNotification.enableAnalytics(deferred.resolve, (error) => {
-            this.logger.error('Error enabling or disabling Firebase analytics', enable, error);
-            deferred.resolve();
-        }, !!enable);
-
-        await deferred.promise;
+                resolve();
+            }, !!enable);
+        });
     }
 
     /**
@@ -315,13 +315,13 @@ export class CorePushNotificationsProvider {
         }
 
         return {
-            appid:      CoreConstants.CONFIG.app_id,
-            name:       Device.manufacturer || '',
-            model:      Device.model,
-            platform:   Device.platform + '-fcm',
-            version:    Device.version,
-            pushid:     this.pushID,
-            uuid:       Device.uuid,
+            appid: CoreConstants.CONFIG.app_id,
+            name: Device.manufacturer || '',
+            model: Device.model,
+            platform: Device.platform + '-fcm',
+            version: Device.version,
+            pushid: this.pushID,
+            uuid: Device.uuid,
         };
     }
 
@@ -345,7 +345,7 @@ export class CorePushNotificationsProvider {
      */
     async logEvent(name: string, data: Record<string, unknown>, filter?: boolean): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = <any> window; // This feature is only present in our fork of the plugin.
+        const win = <any>window; // This feature is only present in our fork of the plugin.
 
         if (!CoreConstants.CONFIG.enableanalytics || !win.PushNotification?.logEvent) {
             return;
@@ -357,14 +357,12 @@ export class CorePushNotificationsProvider {
             return;
         }
 
-        const deferred = CoreUtils.promiseDefer<void>();
-
-        win.PushNotification.logEvent(deferred.resolve, (error) => {
-            this.logger.error('Error logging firebase event', name, error);
-            deferred.resolve();
-        }, name, data, !!filter);
-
-        await deferred.promise;
+        await new Promise<void>(resolve => {
+            win.PushNotification.logEvent(resolve, (error) => {
+                this.logger.error('Error logging firebase event', name, error);
+                resolve();
+            }, name, data, !!filter);
+        });
     }
 
     /**
@@ -433,7 +431,7 @@ export class CorePushNotificationsProvider {
     /**
      * Function called when a push notification is clicked. Redirect the user to the right state.
      *
-     * @param notification Notification.
+     * @param data Notification data.
      * @return Promise resolved when done.
      */
     async notificationClicked(data: CorePushNotificationsNotificationBasicData): Promise<void> {
@@ -493,7 +491,7 @@ export class CorePushNotificationsProvider {
         if (extraFeatures && isAndroid && CoreUtils.isFalseOrZero(data.notif)) {
             // It's a message, use messaging style. Ionic Native doesn't specify this option.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).text = [
+            (<any>localNotif).text = [
                 {
                     message: notification.message,
                     person: data.sender ?? (data.conversationtype == '2' ? data.userfromfullname : ''),
@@ -507,7 +505,7 @@ export class CorePushNotificationsProvider {
             localNotif.icon = notification.image;
             // This feature isn't supported by the official plugin, we use a fork.
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (<any> localNotif).iconType = data['image-type'];
+            (<any>localNotif).iconType = data['image-type'];
 
             localNotif.summary = data.summaryText;
 
@@ -545,7 +543,7 @@ export class CorePushNotificationsProvider {
      * @return Promise resolved when device is unregistered.
      */
     async unregisterDeviceOnMoodle(site: CoreSite): Promise<void> {
-        if (!site || !CoreApp.isMobile()) {
+        if (!site || !CorePlatform.isMobile()) {
             throw new CoreError('Cannot unregister device');
         }
 
@@ -553,7 +551,7 @@ export class CorePushNotificationsProvider {
 
         const data: CoreUserRemoveUserDeviceWSParams = {
             appid: CoreConstants.CONFIG.app_id,
-            uuid:  Device.uuid,
+            uuid: Device.uuid,
         };
         let response: CoreUserRemoveUserDeviceWSResponse;
 
@@ -627,7 +625,7 @@ export class CorePushNotificationsProvider {
 
         const total = counters.reduce((previous, counter) => previous + counter, 0);
 
-        if (!CoreApp.isMobile()) {
+        if (!CorePlatform.isMobile()) {
             // Browser doesn't have an app badge, stop.
             return total;
         }
@@ -829,7 +827,7 @@ export class CorePushNotificationsProvider {
     protected async shouldRegister(
         data: CoreUserAddUserDeviceWSParams,
         site: CoreSite,
-    ): Promise<{register: boolean; unregister: boolean}> {
+    ): Promise<{ register: boolean; unregister: boolean }> {
 
         // Check if the device is already registered.
         const records = await CoreUtils.ignoreErrors(
@@ -931,7 +929,7 @@ export type CoreUserRemoveUserDeviceWSResponse = {
  * Params of core_user_add_user_device WS.
  */
 export type CoreUserAddUserDeviceWSParams = {
-    appid: string; // The app id, usually something like com.moodle.moodlemobile.
+    appid: string; // The app id, usually something like com.moodle.mactay.
     name: string; // The device name, 'occam' or 'iPhone' etc.
     model: string; // The device model 'Nexus4' or 'iPad1,1' etc.
     platform: string; // The device platform 'iOS' or 'Android' etc.

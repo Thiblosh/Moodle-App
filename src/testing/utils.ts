@@ -19,11 +19,13 @@ import { Observable, Subject } from 'rxjs';
 import { sep } from 'path';
 
 import { CORE_SITE_SCHEMAS } from '@services/sites';
-import { CoreSingletonProxy, Network, Platform } from '@singletons';
+import { CoreSingletonProxy, Translate } from '@singletons';
 import { CoreTextUtilsProvider } from '@services/utils/text';
 
 import { TranslatePipeStub } from './stubs/pipes/translate';
 import { CoreExternalContentDirectiveStub } from './stubs/directives/core-external-content';
+import { CoreNetwork } from '@services/network';
+import { CorePlatform } from '@services/platform';
 
 abstract class WrapperComponent<U> {
 
@@ -36,8 +38,13 @@ type ServiceInjectionToken = AbstractType<unknown> | Type<unknown> | string;
 let testBedInitialized = false;
 const textUtils = new CoreTextUtilsProvider();
 const DEFAULT_SERVICE_SINGLETON_MOCKS: [CoreSingletonProxy, Record<string, unknown>][] = [
-    [Platform, mock({ is: () => false, ready: () => Promise.resolve(), resume: new Subject<void>() })],
-    [Network, { onChange: () => new Observable() }],
+    [CorePlatform, mock({
+        is: () => false,
+        isMobile: () => false,
+        ready: () => Promise.resolve(),
+        resume: new Subject<void>(),
+    })],
+    [CoreNetwork, { onChange: () => new Observable() }],
 ];
 
 async function renderAngularComponent<T>(component: Type<T>, config: RenderConfig): Promise<ComponentFixture<T>> {
@@ -255,4 +262,28 @@ export async function renderWrapperComponent<T>(
  */
 export function agnosticPath(unixPath: string): string {
     return unixPath.replace(/\//g, sep);
+}
+
+/**
+ * Waits a certain time.
+ *
+ * @param time Number of milliseconds.
+ */
+export function wait(time: number): Promise<void> {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, time);
+    });
+}
+
+/**
+ * Mocks translate service with certain translations.
+ *
+ * @param translations List of translations.
+ */
+export function mockTranslate(translations: Record<string, string>): void {
+    mockSingleton(Translate, {
+        instant: (key) => translations[key] ?? key,
+    });
 }

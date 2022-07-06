@@ -28,13 +28,12 @@ import { FormControl } from '@angular/forms';
 import { IonTextarea, IonContent, IonSlides } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
-import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
 import { CoreFilepool } from '@services/filepool';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUrlUtils } from '@services/utils/url';
 import { CoreUtils } from '@services/utils/utils';
-import { Platform, Translate } from '@singletons';
+import { Translate } from '@singletons';
 import { CoreEventFormActionData, CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreEditorOffline } from '../../services/editor-offline';
 import { CoreComponentsRegistry } from '@singletons/components-registry';
@@ -42,6 +41,7 @@ import { CoreLoadingComponent } from '@components/loading/loading';
 import { CoreScreen } from '@services/screen';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreDom } from '@singletons/dom';
+import { CorePlatform } from '@services/platform';
 
 /**
  * Component to display a rich text editor if enabled.
@@ -155,7 +155,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
         this.canScanQR = CoreUtils.canScanQR();
         this.isPhone = CoreScreen.isMobile;
         this.toolbarHidden = this.isPhone;
-        this.direction = Platform.isRTL ? 'rtl' : 'ltr';
+        this.direction = CorePlatform.isRTL ? 'rtl' : 'ltr';
     }
 
     /**
@@ -269,7 +269,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
         // Change the side when the language changes.
         this.languageChangedSubscription = Translate.onLangChange.subscribe(() => {
             setTimeout(() => {
-                this.direction = Platform.isRTL ? 'rtl' : 'ltr';
+                this.direction = CorePlatform.isRTL ? 'rtl' : 'ltr';
             });
         });
     }
@@ -797,7 +797,7 @@ export class CoreEditorRichTextEditorComponent implements OnInit, AfterViewInit,
         const selection = window.getSelection()?.toString();
 
         // When RTE is focused with a whole paragraph in desktop the stopBubble will not fire click.
-        if (CoreApp.isMobile() || !this.rteEnabled || document.activeElement != this.editorElement || selection == '') {
+        if (CorePlatform.isMobile() || !this.rteEnabled || document.activeElement != this.editorElement || selection == '') {
             this.stopBubble(event);
         }
     }

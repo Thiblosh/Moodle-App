@@ -15,7 +15,7 @@
 import { Injectable } from '@angular/core';
 import { CoreSites } from '@services/sites';
 import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
-import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUrlUtils } from '@services/utils/url';
@@ -32,7 +32,7 @@ import { AddonCalendarEventDBRecord, AddonCalendarReminderDBRecord, EVENTS_TABLE
 import { CoreCourses } from '@features/courses/services/courses';
 import { ContextLevel, CoreConstants } from '@/core/constants';
 import { CoreWSError } from '@classes/errors/wserror';
-import { ApplicationInit, makeSingleton, Translate, Platform } from '@singletons';
+import { ApplicationInit, makeSingleton, Translate } from '@singletons';
 import { AddonCalendarOfflineEventDBRecord } from './database/calendar-offline';
 import { AddonCalendarMainMenuHandlerService } from './handlers/mainmenu';
 import { SafeUrl } from '@angular/platform-browser';
@@ -41,6 +41,7 @@ import { AddonCalendarFilter } from './calendar-helper';
 import { AddonCalendarSyncEvents, AddonCalendarSyncProvider } from './calendar-sync';
 import { CoreEvents } from '@singletons/events';
 import { CoreText } from '@singletons/text';
+import { CorePlatform } from '@services/platform';
 
 const ROOT_CACHE_KEY = 'mmaCalendar:';
 
@@ -241,7 +242,7 @@ export class AddonCalendarProvider {
         const storeOffline = (): Promise<boolean> =>
             AddonCalendarOffline.markDeleted(eventId, name, deleteAll, siteId).then(() => false);
 
-        if (forceOffline || !CoreApp.isOnline()) {
+        if (forceOffline || !CoreNetwork.isOnline()) {
             // App is offline, store the action.
             return storeOffline();
         }
@@ -1074,7 +1075,7 @@ export class AddonCalendarProvider {
         });
 
         // Store starting week day preference, we need it in offline to show months that are not in cache.
-        if (CoreApp.isOnline()) {
+        if (CoreNetwork.isOnline()) {
             CoreConfig.set(AddonCalendarProvider.STARTING_WEEK_DAY, response.daynames[0].dayno);
         }
 
@@ -1429,7 +1430,7 @@ export class AddonCalendarProvider {
      * @return Promise resolved when all the notifications have been scheduled.
      */
     async scheduleAllSitesEventsNotifications(): Promise<void> {
-        await Platform.ready();
+        await CorePlatform.ready();
 
         const notificationsEnabled = CoreLocalNotifications.isAvailable();
 
@@ -1707,7 +1708,7 @@ export class AddonCalendarProvider {
             return { sent: false, event };
         };
 
-        if (options.forceOffline || !CoreApp.isOnline()) {
+        if (options.forceOffline || !CoreNetwork.isOnline()) {
             // App is offline, store the event.
             return storeOffline();
         }

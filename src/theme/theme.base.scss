@@ -17,10 +17,22 @@ body {
 }
 
 // Common styles.
-.text-left           { text-align: left; }
-.text-right          { text-align: right; }
-.text-center         { text-align: center; }
-.text-justify        { text-align: justify; }
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-justify {
+    text-align: justify;
+}
+
 .clearfix {
     &:after {
         content: "";
@@ -36,35 +48,68 @@ body {
 .img-responsive {
     display: block;
     max-width: 100%;
+
     &[height] {
         height: auto;
     }
 }
 
-.opacity-hide { opacity: 0; }
-.core-big   { font-size: 115%; }
-.invisible { visibility: hidden; }
+.opacity-hide {
+    opacity: 0;
+}
+
+.core-big {
+    font-size: 115%;
+}
+
+.invisible {
+    visibility: hidden;
+}
 
 .button-no-uppercase {
     text-transform: none;
 }
 
-.flex { display: flex; }
-.inline-block { display: inline-block; }
-.block { display: block; }
+.flex {
+    display: flex;
+}
+
+.inline-block {
+    display: inline-block;
+}
+
+.block {
+    display: block;
+}
 
 .flex-row {
     display: flex;
     flex-direction: row;
 }
 
-.margin-bottom-sm { margin-bottom: 8px; }
-.margin-bottom-md { margin-bottom: 12px; }
+.margin-bottom-sm {
+    margin-bottom: 8px;
+}
 
-.font-bold { font-weight: bold; }
-.font-italic { font-style: italic; }
-.font-lg { font-size: 1.7rem; }
-.font-sm { font-size: 1.2rem; }
+.margin-bottom-md {
+    margin-bottom: 12px;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+.font-italic {
+    font-style: italic;
+}
+
+.font-lg {
+    font-size: 1.7rem;
+}
+
+.font-sm {
+    font-size: 1.2rem;
+}
 
 // Headings.
 // Some styles taken from ion-label
@@ -81,8 +126,8 @@ body {
     }
 }
 
-.ios ion-label > p,
-.md ion-label > p {
+.ios ion-label>p,
+.md ion-label>p {
     --color: var(--subdued-text-color);
     color: var(--color);
 }
@@ -120,24 +165,26 @@ body {
 }
 
 // Correctly inherit ion-text-wrap onto labels.
-.item ion-label core-format-text > *,
-.fake-ion-item core-format-text > * {
+.item ion-label core-format-text>*,
+.fake-ion-item core-format-text>* {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.item.ion-text-wrap > ion-label core-format-text > *,
-.fake-ion-item.ion-text-wrap core-format-text > * {
+.item.ion-text-wrap>ion-label core-format-text>*,
+.fake-ion-item.ion-text-wrap core-format-text>* {
     white-space: normal;
     overflow: inherit;
 }
 
-.item.ion-text-wrap > ion-label {
+.item.ion-text-wrap>ion-label {
     white-space: normal !important;
 }
 
-@each $color-name, $unused in $colors {
+@each $color-name,
+$unused in $colors {
+
     .text-#{$color-name},
     p.text-#{$color-name} {
         color: var(--ion-color-#{$color-name}) !important;
@@ -169,6 +216,7 @@ ion-header {
             --border-radius: var(--huge-radius);
             --primary: var(--core-header-buttons-color);
         }
+
         ion-back-button::part(text) {
             display: none;
         }
@@ -177,6 +225,7 @@ ion-header {
         .button.button-solid.button-has-icon-only {
             width: var(--a11y-min-target-size);
             height: var(--a11y-min-target-size);
+
             ion-icon {
                 font-size: 24px;
             }
@@ -190,7 +239,9 @@ ion-header {
     ion-title {
         @include padding(0, 16px);
 
-        h1, h2, .subheading {
+        h1,
+        h2,
+        .subheading {
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
@@ -204,7 +255,7 @@ ion-header {
         h1 {
             .core-header-logo {
                 max-height: var(--core-mainpage-headerlogo-maxheight);
-                display: var( --core-mainpage-headerlogo-display);
+                display: var(--core-mainpage-headerlogo-display);
             }
 
             .core-header-sitename {
@@ -212,7 +263,9 @@ ion-header {
             }
         }
 
-        h1, h2, .subheading {
+        h1,
+        h2,
+        .subheading {
             font-size: 20px;
             font-weight: 500;
             letter-spacing: .0125em;
@@ -220,8 +273,8 @@ ion-header {
             padding: 0;
         }
 
-        h1 + h2,
-        h1 + .subheading {
+        h1+h2,
+        h1+.subheading {
             font-size: var(--text-size);
             font-weight: 400;
         }
@@ -235,13 +288,15 @@ ion-header {
             top: auto;
             text-align: start;
 
-            h1, h2, .subheading {
+            h1,
+            h2,
+            .subheading {
                 font-size: 17px;
                 font-weight: 600;
             }
 
-            h1 + h2,
-            h1 + .subheading {
+            h1+h2,
+            h1+.subheading {
                 font-size: var(--text-size);
                 font-weight: 400;
             }
@@ -341,7 +396,7 @@ ion-button core-format-text {
     line-height: 1.2;
 }
 
-ion-button > * {
+ion-button>* {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -349,12 +404,13 @@ ion-button > * {
 
 ion-button.ion-text-wrap {
     white-space: normal;
+
     core-format-text {
         white-space: normal;
         display: contents;
     }
 
-    & > * {
+    &>* {
         white-space: normal;
     }
 }
@@ -367,7 +423,7 @@ ion-button.button-has-icon-only {
     margin: 2px;
 }
 
-ion-button:not(.button-has-icon-only):not(.button-small) > ion-icon {
+ion-button:not(.button-has-icon-only):not(.button-small)>ion-icon {
     min-width: 20px;
 }
 
@@ -468,7 +524,7 @@ ion-alert.core-nohead {
     }
 }
 
-ion-alert .alert-button.timed-button{
+ion-alert .alert-button.timed-button {
     position: relative;
 
     &::before {
@@ -482,9 +538,11 @@ ion-alert .alert-button.timed-button{
         background-color: var(--primary-tint);
         animation: scaleFrom0 10s forwards linear;
         transform-origin: left;
+
         @include rtl() {
             transform-origin: right;
         }
+
         z-index: -1;
     }
 }
@@ -492,7 +550,8 @@ ion-alert .alert-button.timed-button{
 ion-alert {
     --border-radius: var(--huge-radius);
 
-    &.md, &.ios {
+    &.md,
+    &.ios {
         --max-width: 80%;
 
         @include media-breakpoint-up(md) {
@@ -533,7 +592,8 @@ ion-toast {
     }
 }
 
-@each $color-name, $unused in $colors {
+@each $color-name,
+$unused in $colors {
     ion-toast.core-#{$color-name}-toast {
         --background: var(--ion-color-#{$color-name}-tint);
         --color: var(--ion-color-#{$color-name}-shade);
@@ -613,16 +673,20 @@ body.core-iframe-fullscreen ion-router-outlet {
         --core-header-toolbar-border-width: 0px;
 
         ion-toolbar {
-            h1, ion-back-button {
+
+            h1,
+            ion-back-button {
                 display: none;
             }
         }
     }
 
     @media screen and (orientation: landscape) {
+
         // Place ion-header on the side and hide text
         .ion-page {
             flex-direction: row-reverse;
+
             ion-header {
                 width: calc(var(--core-header-toolbar-height), var(--ion-safe-area-right));
                 @include safe-area-padding-horizontal(null, 0px);
@@ -665,6 +729,7 @@ body.core-iframe-fullscreen ion-router-outlet {
         ion-content {
             --background: transparent !important;
         }
+
         position: absolute;
         @include position(0 !important, null, null, 0 !important);
         display: block;
@@ -698,7 +763,8 @@ body.core-iframe-fullscreen ion-router-outlet {
     }
 }
 
-@each $breakpoint, $width in $screen-breakpoints {
+@each $breakpoint,
+$width in $screen-breakpoints {
     .core-modal-lateral-#{$breakpoint} {
         --modal-lateral-max-width: #{$width};
     }
@@ -723,8 +789,9 @@ body.core-iframe-fullscreen ion-router-outlet {
 // Item styles
 [aria-current="page"],
 .item.item-current {
-    @include safe-area-border-start(var(--selected-item-border-width), solid,  var(--selected-item-color));
-    > * {
+    @include safe-area-border-start(var(--selected-item-border-width), solid, var(--selected-item-color));
+
+    >* {
         --ion-safe-area-left: 0px;
     }
 
@@ -777,7 +844,8 @@ body.core-iframe-fullscreen ion-router-outlet {
 }
 
 // Card styles
-@each $color-name, $unused in $colors {
+@each $color-name,
+$unused in $colors {
 
     // Message cards.
     ion-card.core-#{$color-name}-card {
@@ -796,7 +864,8 @@ body.core-iframe-fullscreen ion-router-outlet {
             --border-width: 0px;
             font-size: var(--text-size);
 
-            ion-label, ion-label > p {
+            ion-label,
+            ion-label>p {
                 --color: var(--color-shade);
             }
         }
@@ -804,7 +873,8 @@ body.core-iframe-fullscreen ion-router-outlet {
         ion-label {
             white-space: normal !important;
         }
-        ion-item > ion-icon[slot] {
+
+        ion-item>ion-icon[slot] {
             color: var(--color-shade);
             @include margin-horizontal(null, 16px);
         }
@@ -817,7 +887,8 @@ body.core-iframe-fullscreen ion-router-outlet {
         --border-width: 0 0 3px 0;
         --border-color: var(--color-base);
         --inner-border-width: 0px;
-        > ion-icon[slot] {
+
+        >ion-icon[slot] {
             color: var(--color-base);
         }
     }
@@ -846,7 +917,7 @@ img.large-avatar,
     max-width: var(--core-large-avatar-size);
     max-height: var(--core-large-avatar-size);
     margin-bottom: 10px;
-    border-radius : 50%;
+    border-radius: 50%;
     padding: 4px;
     border: 1px solid var(--stroke);
     background-color: transparent;
@@ -857,7 +928,8 @@ ion-avatar.large-avatar {
     height: var(--core-large-avatar-size);
 }
 
-ion-avatar ion-img, ion-avatar img {
+ion-avatar ion-img,
+ion-avatar img {
     text-indent: -99999px;
     background-color: var(--gray-200);
 }
@@ -891,13 +963,13 @@ ion-card {
 ion-list.core-course-module-list-wrapper,
 .list-item-limited-width,
 .core-course-module-list-wrapper,
-ion-content.limited-width > :not([slot]) {
+ion-content.limited-width> :not([slot]) {
     max-width: var(--list-item-max-width);
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
-ion-content.limited-width > :not([slot]) {
+ion-content.limited-width> :not([slot]) {
     display: flex;
     flex-direction: column;
     min-height: 100%;
@@ -1064,6 +1136,7 @@ ion-select-popover {
 
     ion-item.core-select-option-title {
         cursor: pointer;
+
         ion-radio {
             display: none;
         }
@@ -1121,6 +1194,7 @@ ion-chip {
 
     &.ion-color {
         background: var(--ion-color-tint);
+
         &.chip-outline {
             background-color: transparent;
             border-color: var(--ion-color-base);
@@ -1132,6 +1206,7 @@ ion-chip {
         &.ion-color-dark,
         &.ion-color-secondary {
             color: var(--gray-900);
+
             &.chip-outline {
                 color: var(--text-color);
             }
@@ -1182,7 +1257,8 @@ ion-searchbar {
     cursor: pointer;
 }
 
-.core-anchor, core-format-text a {
+.core-anchor,
+core-format-text a {
     color: var(--core-link-color);
     cursor: pointer;
     text-decoration: underline;
@@ -1202,9 +1278,11 @@ core-block ion-item-divider .core-button-spinner {
 .core-horizontal-scroll {
     display: block;
     overflow-x: scroll;
+
     .safe-area-pseudo-padding-start {
         @include padding-horizontal(var(--ion-safe-area-left), 0px);
     }
+
     .safe-area-pseudo-padding-end {
         @include padding-horizontal(0px, var(--ion-safe-area-right));
     }
@@ -1212,13 +1290,14 @@ core-block ion-item-divider .core-button-spinner {
 
 // Text formats.
 // Highlight text.
-mark, .matchtext {
+mark,
+.matchtext {
     background-color: var(--text-hightlight-background-color);
 }
 
 // Monospaced font.
 .core-monospaced {
-    font-family: Andale Mono,Monaco,Courier New,DejaVu Sans Mono,monospace;
+    font-family: Andale Mono, Monaco, Courier New, DejaVu Sans Mono, monospace;
 }
 
 .core-iframe-offline-disabled {
@@ -1226,12 +1305,17 @@ mark, .matchtext {
 }
 
 .core-scanning-qr {
-    .ion-page, .modal-wrapper {
+
+    .ion-page,
+    .modal-wrapper {
         background-color: transparent !important;
         --background: transparent;
     }
 
-    ion-content, ion-backdrop, ion-modal:not(.core-modal-fullscreen), ion-tabs {
+    ion-content,
+    ion-backdrop,
+    ion-modal:not(.core-modal-fullscreen),
+    ion-tabs {
         display: none !important;
     }
 }
@@ -1432,18 +1516,28 @@ ion-datetime.datetime-disabled {
 ion-item.item-multiple-inputs:not(.only-links):not(.item-rte),
 ion-item.ion-activatable:not(.only-links) {
     cursor: pointer;
+
     ion-label {
         z-index: 3;
         pointer-events: none;
 
-        ion-anchor, a,
-        ion-button, button,
-        audio, video, select, input, iframe {
+        ion-anchor,
+        a,
+        ion-button,
+        button,
+        audio,
+        video,
+        select,
+        input,
+        iframe {
             pointer-events: visible;
         }
     }
 
-    ion-checkbox, ion-datetime, ion-radio, ion-select{
+    ion-checkbox,
+    ion-datetime,
+    ion-radio,
+    ion-select {
         position: static;
     }
 }
@@ -1462,6 +1556,7 @@ a {
 ion-item.item-input.item-multiple-inputs {
     .flex-row {
         width: 100%;
+
         ion-select {
             position: relative;
         }
@@ -1484,12 +1579,15 @@ ion-input.has-focus,
 ion-item.ion-focused:not(:focus),
 ion-item.item-input ion-input.has-focus {
     position: relative;
+
     &::after {
         box-shadow: revert;
         opacity: revert;
         z-index: revert;
     }
-    .item-highlight, .item-inner-highlight {
+
+    .item-highlight,
+    .item-inner-highlight {
         position: unset;
     }
 }
@@ -1507,6 +1605,7 @@ ion-item.item.divider {
         font-weight: 500;
         line-height: 1.5;
     }
+
     ion-label h2.big {
         font-size: var(--item-divider-font-size-big);
     }
@@ -1531,7 +1630,11 @@ ion-item.item {
     outline: none;
 }
 
-textarea, button, select, input, a {
+textarea,
+button,
+select,
+input,
+a {
     &:focus {
         @include core-focus-style();
         outline: none;
@@ -1546,7 +1649,9 @@ ion-modal:focus-visible {
 }
 
 ion-input .native-input {
-    &:focus, &:focus-visible {
+
+    &:focus,
+    &:focus-visible {
         box-shadow: none;
         outline: none;
     }
@@ -1575,7 +1680,7 @@ iframe {
     }
 }
 
-ion-grid.core-no-grid > ion-row {
+ion-grid.core-no-grid>ion-row {
     display: block;
 }
 
@@ -1589,6 +1694,7 @@ ion-grid.core-no-grid > ion-row {
 .core-footer-shadow [collapsible-footer] {
     box-shadow: var(--drop-shadow-top, none);
 }
+
 [collapsible-footer] {
     transition: box-shadow 0.5s;
     width: 100%;
@@ -1610,9 +1716,11 @@ ion-grid.core-no-grid > ion-row {
             --core-collapsible-footer-height: 0;
             opacity: 0;
         }
+
         &.has-module-nav.footer-collapsed {
             --core-collapsible-footer-height: auto;
             opacity: 1;
+
             core-course-module-navigation {
                 height: 0;
                 opacity: 0;
@@ -1620,6 +1728,7 @@ ion-grid.core-no-grid > ion-row {
             }
 
         }
+
         &.footer-expanded {
             --core-collapsible-footer-height: auto;
         }
@@ -1628,6 +1737,7 @@ ion-grid.core-no-grid > ion-row {
 
 .keyboard-is-open ion-content {
     --core-collapsible-footer-height: 0px !important;
+
     [collapsible-footer] {
         height: 0;
     }
@@ -1642,6 +1752,7 @@ ion-grid.core-no-grid > ion-row {
     .adaptable-buttons-row {
         display: flex;
         flex-direction: row;
+
         ion-button {
             flex: 1;
         }
@@ -1688,6 +1799,7 @@ ion-header.no-title {
         flex-grow: 1;
         align-content: flex-end;
     }
+
     .spacer {
         flex-grow: 1;
     }
@@ -1707,7 +1819,7 @@ ion-header.no-title {
     min-width: 50px;
 
     // Hide contents.
-    > * {
+    >* {
         opacity: 0;
         @include core-transition(opacity, 200ms);
     }

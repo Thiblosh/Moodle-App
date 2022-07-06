@@ -17,19 +17,21 @@ import { WKUserScriptWindow } from 'cordova-plugin-wkuserscript';
 import { WKWebViewCookiesWindow } from 'cordova-plugin-wkwebview-cookies';
 
 import { CoreApp } from '@services/app';
+import { CoreNetwork } from '@services/network';
 import { CoreFile } from '@services/file';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUrlUtils } from '@services/utils/url';
-import { CoreUtils, PromiseDefer } from '@services/utils/utils';
+import { CoreUtils } from '@services/utils/utils';
 
-import { makeSingleton, Network, NgZone, Translate, Diagnostic } from '@singletons';
+import { makeSingleton, NgZone, Translate, Diagnostic } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreUrl } from '@singletons/url';
 import { CoreWindow } from '@singletons/window';
 import { CoreContentLinksHelper } from '@features/contentlinks/services/contentlinks-helper';
 import { CoreText } from '@singletons/text';
+import { CorePromisedValue } from '@classes/promised-value';
 
 /**
  * Possible types of frame elements.
@@ -48,7 +50,7 @@ export class CoreIframeUtilsProvider {
     static readonly FRAME_TAGS = ['iframe', 'frame', 'object', 'embed'];
 
     protected logger: CoreLogger;
-    protected waitAutoLoginDefer?: PromiseDefer<void>;
+    protected waitAutoLoginDefer?: CorePromisedValue<void>;
 
     constructor() {
         this.logger = CoreLogger.getInstance('CoreIframeUtilsProvider');
@@ -64,7 +66,7 @@ export class CoreIframeUtilsProvider {
     checkOnlineFrameInOffline(element: CoreFrameElement, isSubframe?: boolean): boolean {
         const src = 'src' in element ? element.src : element.data;
 
-        if (src && src != 'about:blank' && !CoreUrlUtils.isLocalFileUrl(src) && !CoreApp.isOnline()) {
+        if (src && src != 'about:blank' && !CoreUrlUtils.isLocalFileUrl(src) && !CoreNetwork.isOnline()) {
             if (element.classList.contains('core-iframe-offline-disabled')) {
                 // Iframe already hidden, stop.
                 return true;
@@ -74,7 +76,7 @@ export class CoreIframeUtilsProvider {
             this.addOfflineWarning(element, src, isSubframe);
 
             // If the network changes, check it again.
-            const subscription = Network.onConnect().subscribe(() => {
+            const subscription = CoreNetwork.onConnect().subscribe(() => {
                 // Execute the callback in the Angular zone, so change detection doesn't stop working.
                 NgZone.run(() => {
                     if (!this.checkOnlineFrameInOffline(element, isSubframe)) {
@@ -193,14 +195,14 @@ export class CoreIframeUtilsProvider {
 
         if (this.waitAutoLoginDefer) {
             // Another iframe is already using auto-login. Wait for it to finish.
-            await this.waitAutoLoginDefer.promise;
+            await this.waitAutoLoginDefer;
 
             // Return the original URL, we can't request a new auto-login.
             return url;
         }
 
         // First iframe requesting auto-login.
-        this.waitAutoLoginDefer = CoreUtils.promiseDefer();
+        this.waitAutoLoginDefer = new CorePromisedValue();
 
         const finalUrl = await currentSite.getAutoLoginUrl(url, false);
 
@@ -518,7 +520,7 @@ export class CoreIframeUtilsProvider {
 
             if (!CoreFileHelper.isOpenableInApp({ filename })) {
                 try {
-                    await CoreFileHelper.showConfirmOpenUnsupportedFile();
+                    await CoreFileHelper.showConfirmOpenUnsupportedFile(false, { filename });
                 } catch (error) {
                     return; // Cancelled, stop.
                 }
